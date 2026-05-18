@@ -10,11 +10,62 @@ struct ChildConfig {
     mount_dir: String,
 }
 
+fn choose_hostname(base_time: std::time::Instant) -> String {
+    let suits = ["swords", "wands", "pentacles", "cups"];
+    let minor = [
+        "ace", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "page",
+        "knight", "queen", "king",
+    ];
+    let major = [
+        "fool",
+        "magician",
+        "high-priestess",
+        "empress",
+        "emperor",
+        "hierophant",
+        "lovers",
+        "chariot",
+        "strength",
+        "hermit",
+        "wheel",
+        "justice",
+        "hanged-man",
+        "death",
+        "temperance",
+        "devil",
+        "tower",
+        "star",
+        "moon",
+        "sun",
+        "judgment",
+        "world",
+    ];
+
+    let now = base_time.elapsed().subsec_nanos();
+    let mut ix = (now as usize) % 78;
+    if ix < major.len() {
+        format!("{:05x}-{}", now, major[ix])
+    } else {
+        ix -= major.len();
+        format!(
+            "{:05x}-{}-{}",
+            now,
+            minor[ix % minor.len()],
+            suits[ix / minor.len()]
+        )
+    }
+}
+
 // -c: command or entrypoint to run in the container
 // -m : Mount/Root Fs
 // -u : User id the container will run as
 
 fn main() {
+    // set base_time. If I was using libc, I would use clock_gettime(CLOCK_MONOTONIC)
+    // And reference for base_time would be time since boot.
+
+    let base_time = std::time::Instant::now();
+
     let mut child_config = ChildConfig {
         argc: 0,
         uid: 0,
@@ -70,4 +121,8 @@ fn main() {
     }
     // print arguments
     println!("child_config: {:?}", child_config);
+
+    // Check linux version
+    // Choose hostname
+    child_config.hostname = choose_hostname(base_time);
 }
